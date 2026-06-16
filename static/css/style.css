@@ -188,6 +188,10 @@ figcaption strong { color: var(--ink-soft); }
 }
 .caption-note { text-align: center; font-size: .9rem; color: var(--muted); }
 
+/* Smaller, centered figure variant */
+figure.fig-sm img { max-width: 440px; width: 100%; }
+@media (max-width: 520px) { figure.fig-sm img { max-width: 100%; } }
+
 /* ===================== Cards ===================== */
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .card {
