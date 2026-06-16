@@ -20,6 +20,18 @@ document.querySelectorAll('.copy-btn').forEach((btn) => {
   });
 });
 
+// ---- Tabs (training curves) ----
+document.querySelectorAll('.tabs-wrap').forEach((wrap) => {
+  const btns = wrap.querySelectorAll('.tab-btn');
+  const panels = wrap.querySelectorAll('.tab-panel');
+  btns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      btns.forEach((b) => b.classList.toggle('active', b === btn));
+      panels.forEach((p) => p.classList.toggle('active', p.id === btn.dataset.tab));
+    });
+  });
+});
+
 // ---- Reveal on scroll ----
 (function () {
   const targets = document.querySelectorAll('.section, .teaser figure');

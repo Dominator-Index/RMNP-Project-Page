@@ -36,6 +36,7 @@
         <a href="#theory-init">Theory</a>
         <a href="#method">Method</a>
         <a href="#results">Results</a>
+        <a href="#curves">Curves</a>
         <a href="#bibtex">BibTeX</a>
       </div>
     </div>
@@ -396,8 +397,63 @@
     </div>
   </section>
 
+  <!-- ===== Supplementary: training curves (LLM only) ===== -->
+  <section id="curves" class="section alt">
+    <div class="container">
+      <span class="eyebrow">Supplementary</span>
+      <h2>Training curves</h2>
+      <p class="caption-note">Per-step training and validation loss across all GPT-2 and LLaMA scales. Each
+        panel compares AdamW, Muon, and RMNP; RMNP matches or slightly improves on Muon while both clearly
+        beat AdamW.</p>
+      <div class="tabs-wrap">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="tab-owt">GPT-2 · OpenWebText</button>
+          <button class="tab-btn" data-tab="tab-fw">GPT-2 · FineWeb-Edu</button>
+          <button class="tab-btn" data-tab="tab-c4">LLaMA · C4</button>
+        </div>
+
+        <div class="tab-panel active" id="tab-owt">
+          <div class="curve-grid">
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-OWT-train_loss.png" alt="GPT-2 Small on OpenWebText — training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-OWT-val_loss.png" alt="GPT-2 Small on OpenWebText — validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-OWT-train_loss.png" alt="GPT-2 Medium on OpenWebText — training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-OWT-val_loss.png" alt="GPT-2 Medium on OpenWebText — validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-OWT-train_loss.png" alt="GPT-2 Large on OpenWebText — training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-OWT-val_loss.png" alt="GPT-2 Large on OpenWebText — validation loss" />
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-fw">
+          <div class="curve-grid">
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-FW-train_loss.png" alt="GPT-2 Small on FineWeb-Edu — training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-FW-val_loss.png" alt="GPT-2 Small on FineWeb-Edu — validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-FW-train_loss.png" alt="GPT-2 Medium on FineWeb-Edu — training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-FW-val_loss.png" alt="GPT-2 Medium on FineWeb-Edu — validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-FW-train_loss.png" alt="GPT-2 Large on FineWeb-Edu — training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-FW-val_loss.png" alt="GPT-2 Large on FineWeb-Edu — validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-XLarge-FW-train_loss.png" alt="GPT-2 XLarge on FineWeb-Edu — training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-XLarge-FW-val_loss.png" alt="GPT-2 XLarge on FineWeb-Edu — validation loss" />
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-c4">
+          <div class="curve-grid">
+            <img loading="lazy" src="static/images/curves/LLaMA-60M-C4-train_loss.png" alt="LLaMA 60M on C4 — training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-60M-C4-val_loss.png" alt="LLaMA 60M on C4 — validation loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-130M-C4-train_loss.png" alt="LLaMA 130M on C4 — training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-130M-C4-val_loss.png" alt="LLaMA 130M on C4 — validation loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-350M-C4-train_loss.png" alt="LLaMA 350M on C4 — training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-350M-C4-val_loss.png" alt="LLaMA 350M on C4 — validation loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-1B-C4-train_loss.png" alt="LLaMA 1B on C4 — training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-1B-C4-val_loss.png" alt="LLaMA 1B on C4 — validation loss" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== BibTeX ===== -->
-  <section id="bibtex" class="section alt">
+  <section id="bibtex" class="section">
     <div class="container narrow">
       <h2>BibTeX</h2>
       <div class="bibtex-box">

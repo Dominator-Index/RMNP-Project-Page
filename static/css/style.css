@@ -289,6 +289,32 @@ table.wide thead th.grp { border-left: 1px solid rgba(255,255,255,.18); }
   border: 1px solid rgba(22,184,166,.28);
 }
 
+/* ===================== Tabs + curve gallery ===================== */
+.tabs { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 6px 0 28px; }
+.tab-btn {
+  padding: 10px 20px; border-radius: 999px; cursor: pointer;
+  font-weight: 600; font-size: .92rem; color: var(--ink-soft);
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+  transition: transform .14s ease, box-shadow .2s ease, color .2s ease;
+}
+.tab-btn:hover { transform: translateY(-1px); color: var(--brand-ink); }
+.tab-btn.active {
+  color: #fff; background: var(--grad-brand); border-color: transparent;
+  box-shadow: var(--shadow-brand);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeIn .35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.curve-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.curve-grid img {
+  width: 100%; height: auto; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: #fff; padding: 8px;
+  box-shadow: var(--shadow-md); transition: transform .2s ease, box-shadow .25s ease;
+}
+.curve-grid img:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+@media (max-width: 680px) { .curve-grid { grid-template-columns: 1fr; } }
+
 /* ===================== BibTeX ===================== */
 .bibtex-box { position: relative; margin-bottom: 26px; }
 .bibtex-box pre {
