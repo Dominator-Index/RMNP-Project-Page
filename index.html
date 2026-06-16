@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RMNP: Row-Momentum Normalized Preconditioning for Scalable Matrix-Based Optimization</title>
+  <meta name="description" content="RMNP replaces Muon's Newton-Schulz iteration with a simple row-wise L2 normalization, cutting preconditioning cost by an order of magnitude while matching optimization performance and convergence guarantees." />
+
+  <!-- Open Graph / social preview -->
+  <meta property="og:title" content="RMNP: Row-Momentum Normalized Preconditioning for Scalable Matrix-Based Optimization" />
+  <meta property="og:description" content="A simple row-wise L2 normalization replaces Muon's Newton-Schulz iteration, giving 13-44x faster preconditioning with matching convergence guarantees." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="static/images/time_scaling.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/css/style.css" />
+
+  <!-- MathJax for inline equations -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+
+  <!-- ===== Top nav ===== -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="#top">RMNP</a>
+      <div class="nav-links">
+        <a href="#abstract">Abstract</a>
+        <a href="#method">Method</a>
+        <a href="#dominance">Hessian</a>
+        <a href="#results">Results</a>
+        <a href="#theory">Theory</a>
+        <a href="#bibtex">BibTeX</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <header id="top" class="hero">
+    <div class="container">
+      <p class="venue-badge">ICML 2026</p>
+      <h1 class="title">RMNP: Row-Momentum Normalized Preconditioning<br />for Scalable Matrix-Based Optimization</h1>
+
+      <div class="authors">
+        <span class="author"><a href="#">Shenyang Deng</a><sup>1*</sup></span>
+        <span class="author"><a href="https://github.com/Dominator-Index">Zhuoli Ouyang</a><sup>1*</sup></span>
+        <span class="author"><a href="#">Tianyu Pang</a><sup>1</sup></span>
+        <span class="author"><a href="#">Zihang Liu</a><sup>2,3</sup></span>
+        <span class="author"><a href="#">Ruochen Jin</a><sup>1</sup></span>
+        <span class="author"><a href="#">Shuhua Yu</a><sup>4</sup></span>
+        <span class="author"><a href="#">Yaoqing Yang</a><sup>1&#9993;</sup></span>
+      </div>
+
+      <div class="affiliations">
+        <span><sup>1</sup>Dartmouth College</span>
+        <span><sup>2</sup>ICSI</span>
+        <span><sup>3</sup>UC Berkeley</span>
+        <span><sup>4</sup>Meta</span>
+      </div>
+      <div class="affiliations note">
+        <span><sup>*</sup>Equal contribution</span>
+        <span><sup>&#9993;</sup>Corresponding author: yaoqing.yang@dartmouth.edu</span>
+      </div>
+
+      <div class="buttons">
+        <a class="btn" href="#" id="paper-link"><span class="ico">📄</span> Paper</a>
+        <a class="btn" href="#" id="arxiv-link"><span class="ico">📑</span> arXiv</a>
+        <a class="btn btn-dark" href="https://github.com/Dominator-Index/RMNP" target="_blank" rel="noopener"><span class="ico">💻</span> Code</a>
+        <a class="btn" href="#bibtex"><span class="ico">❝</span> BibTeX</a>
+      </div>
+
+      <p class="tldr"><strong>TL;DR:</strong> Replace Muon's Newton&ndash;Schulz iteration with a single
+        row-wise&nbsp;$\ell_2$ normalization. Same matrix-level adaptivity, same convergence guarantees,
+        but preconditioning drops from $\mathcal{O}(mn\cdot\min(m,n))$ to&nbsp;$\mathcal{O}(mn)$ &mdash;
+        a <strong>13&ndash;44&times;</strong> wall-clock speedup.</p>
+    </div>
+  </header>
+
+  <!-- ===== Teaser ===== -->
+  <section class="section teaser">
+    <div class="container narrow">
+      <figure>
+        <img src="static/images/time_scaling.png" alt="Wall-clock preconditioning time of RMNP vs Muon" />
+        <figcaption><strong>Figure 1.</strong> Wall-clock time for 100 preconditioning steps, RMNP vs.&nbsp;Muon.
+          As model size grows, Newton&ndash;Schulz orthogonalization becomes a dominant bottleneck, while
+          RMNP's row normalization stays cheap.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===== Abstract ===== -->
+  <section id="abstract" class="section">
+    <div class="container narrow">
+      <h2>Abstract</h2>
+      <p>
+        Preconditioned adaptive methods have gained significant attention for training deep neural
+        networks, as they capture rich curvature information of the loss landscape. The central challenge
+        lies in balancing preconditioning effectiveness with the computational efficiency of implementing
+        the preconditioner. Among recent advances, <strong>Muon</strong> stands out by using
+        Newton&ndash;Schulz iteration to obtain preconditioned updates without explicitly constructing the
+        preconditioning matrix. Despite its advantages, the efficiency of Muon still leaves room for
+        improvement.
+      </p>
+      <p>
+        We introduce <strong>RMNP</strong> (Row-Momentum Normalized Preconditioning), an optimizer that
+        replaces Newton&ndash;Schulz iteration with a simple row-wise ($d_{\text{in}}$) $\ell_2$
+        normalization, motivated by the empirically observed diagonal block structure of the Transformer
+        layer-wise Hessian. We empirically verify that orthogonalization and row-wise $\ell_2$
+        normalization are asymptotically equivalent in the Transformer case. This substitution reduces the
+        per-iteration complexity from $\mathcal{O}(mn\cdot\min(m,n))$ to $\mathcal{O}(mn)$ for an
+        $m\times n$ weight matrix while maintaining comparable optimization performance. Theoretically, we
+        establish non-convex convergence guarantees that match recent results for Muon and achieve the
+        minimax-optimal complexity. Extensive experiments on large language model pretraining show that
+        RMNP delivers competitive performance while substantially reducing preconditioning wall-clock time.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== Contributions ===== -->
+  <section class="section alt">
+    <div class="container">
+      <h2>Highlights</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="card-ico">⚡</div>
+          <h3>Structure-aware, cheaper</h3>
+          <p>A row-wise $\ell_2$ normalization replaces Newton&ndash;Schulz, motivated by the
+            block-diagonal dominance of Transformer curvature &mdash; cutting per-iteration cost from
+            $\mathcal{O}(mn\cdot\min(m,n))$ to $\mathcal{O}(mn)$.</p>
+        </div>
+        <div class="card">
+          <div class="card-ico">📈</div>
+          <h3>Validated at scale</h3>
+          <p>Across GPT-2 (125M&ndash;1.5B) and LLaMA (60M&ndash;1B), RMNP matches or beats Muon and AdamW
+            in perplexity, with up to an order-of-magnitude faster preconditioning.</p>
+        </div>
+        <div class="card">
+          <div class="card-ico">📐</div>
+          <h3>Minimax-optimal theory</h3>
+          <p>Non-convex convergence guarantees on par with state-of-the-art Muon theory, reaching the
+            information-theoretic minimax-optimal complexity despite the reduced cost.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Method ===== -->
+  <section id="method" class="section">
+    <div class="container narrow">
+      <h2>Method</h2>
+      <p>
+        Recent work shows the layer-wise Hessian of Transformers is <em>row-wise block-diagonal
+        dominant</em>: diagonal blocks (interactions within the same row) are far larger than
+        off-diagonal blocks. By Lemma&nbsp;4 of Shampoo, the Muon preconditioner takes the form
+        $H_{\text{MUON}} = (V_t V_t^\top)^{1/2} \otimes I_n$. Retaining only the dominant diagonal
+        blocks yields the <strong>RMNP preconditioner</strong>:
+      </p>
+      <p class="display-eq">
+        $$ H_{\text{RMNP}} = \left(\operatorname{diag}(V_t V_t^\top)\right)^{1/2} \otimes I_n. $$
+      </p>
+      <p>
+        The resulting preconditioned update collapses to a plain row-wise $\ell_2$ normalization of the
+        momentum matrix:
+      </p>
+      <p class="display-eq">
+        $$ \left[\left(\operatorname{diag}(V_t V_t^\top)\right)^{-1/2} V_t\right]_{i,:}
+           = \frac{V_{t,i:}}{\sqrt{(V_t V_t^\top)_{ii}}}
+           = \frac{V_{t,i:}}{\lVert V_{t,i:}\rVert_{\ell_2}}. $$
+      </p>
+
+      <figure>
+        <img src="static/images/pre4.png" alt="Comparison of Transformer layer-wise Hessian, Muon preconditioner, and RMNP preconditioner" />
+        <figcaption><strong>Figure 2.</strong> Transformer layer-wise Hessian (left), the Muon
+          preconditioner $P=V_tV_t^\top$ (middle), and the RMNP preconditioner that keeps only the
+          row-wise diagonal blocks (right).</figcaption>
+      </figure>
+
+      <div class="algo-grid">
+        <div class="algo">
+          <h4>Muon</h4>
+          <ol>
+            <li>$G_t \leftarrow \nabla f(W_t; \xi^t)$</li>
+            <li>$V_t \leftarrow \beta V_{t-1} + (1-\beta) G_t$</li>
+            <li class="hl-muon">$D_t \leftarrow \mathrm{NS}_5(V_t) = (V_tV_t^\top)^{-1/2} V_t$</li>
+            <li>$W_{t+1} \leftarrow W_t - \eta_t D_t$</li>
+          </ol>
+        </div>
+        <div class="algo">
+          <h4>RMNP <span class="ours">(ours)</span></h4>
+          <ol>
+            <li>$G_t \leftarrow \nabla f(W_t; \xi^t)$</li>
+            <li>$V_t \leftarrow \beta V_{t-1} + (1-\beta) G_t$</li>
+            <li class="hl-rmnp">$D_t \leftarrow \mathrm{RN}(V_t) = (\operatorname{diag}(V_tV_t^\top))^{-1/2} V_t$</li>
+            <li>$W_{t+1} \leftarrow W_t - \eta_t D_t$</li>
+          </ol>
+        </div>
+      </div>
+      <p class="caption-note">The two algorithms differ in a <strong>single line</strong>: full
+        orthogonalization (Newton&ndash;Schulz) becomes row normalization.</p>
+    </div>
+  </section>
+
+  <!-- ===== Diagonal dominance ===== -->
+  <section id="dominance" class="section alt">
+    <div class="container narrow">
+      <h2>Why it works: diagonal dominance of the Muon preconditioner</h2>
+      <p>
+        RMNP's approximation is valid exactly when the Gram matrix $V_t V_t^\top$ is diagonally dominant.
+        We track the per-row ratio of the diagonal entry to the average off-diagonal magnitude across
+        training. Across architectures and scales, the minimum ratio $\overline{r}_{\min}$ stays above
+        $1$, the average $\overline{r}_{\text{avg}}$ exceeds $5$, and the maximum reaches the tens &mdash;
+        and dominance <em>strengthens</em> with model size.
+      </p>
+      <figure>
+        <img src="static/images/GPT-2-LLaMA-2x3-Size_Comparison_global_ratio.png" alt="Diagonal dominance ratios across GPT-2 and LLaMA scales" />
+        <figcaption><strong>Figure 3.</strong> Global diagonal-dominance ratios
+          ($\overline{r}_{\text{avg}}, \overline{r}_{\min}, \overline{r}_{\max}$). Top: GPT-2
+          Small/Medium/Large on OpenWebText. Bottom: LLaMA 60M/130M/350M on C4. The red dashed line marks
+          $y=1$; the $y$-axis is log-scaled.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===== Results ===== -->
+  <section id="results" class="section">
+    <div class="container">
+      <h2>Results</h2>
+
+      <h3 class="sub">Preconditioning is 13&ndash;44&times; faster</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Model size</th><th>Muon (s)</th><th>RMNP (s)</th><th>Speedup</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>60M</td><td>1.480</td><td>0.115</td><td>12.9&times;</td></tr>
+            <tr><td>125M</td><td>2.975</td><td>0.201</td><td>14.8&times;</td></tr>
+            <tr><td>200M</td><td>4.140</td><td>0.260</td><td>15.9&times;</td></tr>
+            <tr><td>355M</td><td>7.380</td><td>0.401</td><td>18.4&times;</td></tr>
+            <tr><td>500M</td><td>15.720</td><td>0.462</td><td>34.0&times;</td></tr>
+            <tr><td>770M</td><td>27.070</td><td>0.611</td><td>44.3&times;</td></tr>
+            <tr><td>1.3B</td><td>30.570</td><td>0.783</td><td>39.0&times;</td></tr>
+            <tr><td>1.5B</td><td>36.650</td><td>0.855</td><td>42.9&times;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption-note">Preconditioning time over 100 steps, batch size 16, single RTX&nbsp;Pro&nbsp;6000 GPU.</p>
+
+      <h3 class="sub">&hellip; with no loss in quality</h3>
+      <figure>
+        <img src="static/images/combined_bar.png" alt="Final validation perplexity across LLaMA, GPT-2 FineWeb-Edu, and GPT-2 OpenWebText" />
+        <figcaption><strong>Figure 4.</strong> Final validation perplexity ($\downarrow$). Left: LLaMA on
+          C4. Middle: GPT-2 on FineWeb-Edu-100B. Right: GPT-2 on OpenWebText. <strong>RMNP attains the
+          lowest perplexity in every setting.</strong></figcaption>
+      </figure>
+      <p class="caption-note">RMNP also enables column-wise parameter sharding under PyTorch FSDP2 without
+        cross-device synchronization, since row normalization only needs a complete row &mdash; unlike
+        Muon's all-gather of the full matrix.</p>
+    </div>
+  </section>
+
+  <!-- ===== Theory ===== -->
+  <section id="theory" class="section alt">
+    <div class="container narrow">
+      <h2>Convergence guarantees</h2>
+      <p>
+        Under standard non-convex assumptions, RMNP matches the best-known Muon guarantees. Under
+        $\lVert\cdot\rVert_F$-smoothness it attains $\mathcal{O}(m^2 L_F \sigma^2 \Delta \epsilon^{-4})$;
+        under the matched $\lVert\cdot\rVert_{\infty,2}$-smoothness it improves to
+        $\mathcal{O}(m L_{\infty,2} \sigma^2 \Delta \epsilon^{-4})$ &mdash; a quadratic improvement in
+        dimension dependence, mirroring Muon's gain under nuclear-norm geometry.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Method</th><th>Smoothness</th><th>Criterion</th><th>Complexity</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Muon</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_*$</td><td>$\mathcal{O}(m^2 L\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr><td>Muon</td><td>$L_*$</td><td>$\lVert\nabla f\rVert_*$</td><td>$\mathcal{O}(m L_*\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr class="row-ours"><td>RMNP</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_F$</td><td>$\mathcal{O}(m^2 L_F\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr class="row-ours"><td>RMNP</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_{1,2}$</td><td>$\mathcal{O}(m^2 L_F\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr class="row-ours"><td>RMNP</td><td>$L_{\infty,2}$</td><td>$\lVert\nabla f\rVert_{1,2}$</td><td>$\mathcal{O}(m L_{\infty,2}\sigma^2\Delta\epsilon^{-4})$</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BibTeX ===== -->
+  <section id="bibtex" class="section">
+    <div class="container narrow">
+      <h2>BibTeX</h2>
+      <div class="bibtex-box">
+        <button class="copy-btn" id="copy-bib">Copy</button>
+        <pre id="bib"><code>@inproceedings{deng2026rmnp,
+  title     = {RMNP: Row-Momentum Normalized Preconditioning for Scalable Matrix-Based Optimization},
+  author    = {Deng, Shenyang and Ouyang, Zhuoli and Pang, Tianyu and Liu, Zihang and
+               Jin, Ruochen and Yu, Shuhua and Yang, Yaoqing},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
+  year      = {2026}
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="container narrow">
+      <p>Website template adapted for the RMNP project. Built for the ICML 2026 paper.</p>
+      <p>Code: <a href="https://github.com/Dominator-Index/RMNP" target="_blank" rel="noopener">github.com/Dominator-Index/RMNP</a></p>
+    </div>
+  </footer>
+
+  <script src="static/js/script.js"></script>
+</body>
+</html>
