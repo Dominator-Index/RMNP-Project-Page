@@ -289,6 +289,34 @@ table.wide thead th.grp { border-left: 1px solid rgba(255,255,255,.18); }
   border: 1px solid rgba(22,184,166,.28);
 }
 
+/* ===================== Video poster card ===================== */
+.video-card {
+  display: block; position: relative; overflow: hidden;
+  border-radius: var(--radius); aspect-ratio: 16 / 9;
+  background: radial-gradient(900px 380px at 20% 0%, rgba(155,109,255,.55), transparent 60%),
+              linear-gradient(135deg, #241f3a 0%, #4326c4 55%, #6d4aff 100%);
+  box-shadow: var(--shadow-lg); text-decoration: none;
+  transition: transform .22s ease, box-shadow .25s ease;
+}
+.video-card:hover { transform: translateY(-3px); box-shadow: 0 26px 60px rgba(76,55,160,.30), 0 8px 18px rgba(26,28,46,.10); }
+.video-card .play {
+  position: absolute; inset: 0; margin: auto;
+  width: 86px; height: 86px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; font-size: 1.9rem; padding-left: 6px;
+  background: rgba(255,255,255,.16); border: 2px solid rgba(255,255,255,.6);
+  backdrop-filter: blur(2px);
+  transition: transform .2s ease, background .2s ease;
+}
+.video-card:hover .play { transform: scale(1.09); background: rgba(255,255,255,.3); }
+.video-card .vc-text {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 24px;
+  background: linear-gradient(transparent, rgba(12,8,28,.55));
+  color: #fff; display: flex; flex-direction: column; gap: 3px;
+}
+.video-card .vc-text strong { font-size: 1.08rem; font-weight: 700; }
+.video-card .vc-text small { color: rgba(255,255,255,.82); font-size: .86rem; }
+
 /* ===================== Tabs + curve gallery ===================== */
 .tabs { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 6px 0 28px; }
 .tab-btn {
