@@ -123,6 +123,46 @@
     </div>
   </section>
 
+  <!-- ===== Main result (headline) ===== -->
+  <section id="headline" class="section">
+    <div class="container">
+      <span class="eyebrow">Main result</span>
+      <h2>RMNP attains the lowest perplexity in every setting</h2>
+      <figure>
+        <img src="static/images/combined_bar.png" alt="Final validation perplexity across LLaMA, GPT-2 FineWeb-Edu, and GPT-2 OpenWebText" />
+        <figcaption><strong>Final validation perplexity ($\downarrow$).</strong> Left: LLaMA on C4.
+          Middle: GPT-2 on FineWeb-Edu-100B. Right: GPT-2 on OpenWebText. Across 11 model/dataset settings
+          from 60M to 1.5B, RMNP matches or beats both Muon and AdamW &mdash; while preconditioning
+          <strong>13&ndash;44&times; faster</strong>.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="wide">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="grp" colspan="4">LLaMA on C4</th>
+              <th class="grp" colspan="4">GPT-2 on FineWeb-Edu-100B</th>
+              <th class="grp" colspan="3">GPT-2 on OpenWebText</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th class="grp">60M</th><th>130M</th><th>350M</th><th>1B</th>
+              <th class="grp">Small</th><th>Medium</th><th>Large</th><th>XLarge</th>
+              <th class="grp">Small</th><th>Medium</th><th>Large</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>AdamW</td><td>33.28</td><td>23.24</td><td>17.08</td><td>15.33</td><td>23.85</td><td>18.19</td><td>14.81</td><td>13.12</td><td>24.19</td><td>18.80</td><td>15.27</td></tr>
+            <tr><td>Muon</td><td>29.58</td><td>22.42</td><td>16.87</td><td>14.13</td><td>22.71</td><td>17.13</td><td>14.16</td><td>12.97</td><td>22.86</td><td>17.38</td><td>14.67</td></tr>
+            <tr class="row-ours"><td>RMNP</td><td class="best">28.95</td><td class="best">22.14</td><td class="best">16.85</td><td class="best">13.75</td><td class="best">22.60</td><td class="best">17.07</td><td class="best">13.75</td><td class="best">12.58</td><td class="best">22.82</td><td class="best">17.31</td><td class="best">14.43</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption-note">Final validation perplexity ($\downarrow$); best per column in <strong>bold</strong>
+        (Table&nbsp;17 in the paper).</p>
+    </div>
+  </section>
+
   <!-- ===== 1. Motivation: preconditioner shape vs Hessian shape ===== -->
   <section id="motivation" class="section alt">
     <div class="container narrow">
@@ -170,7 +210,7 @@
       </div>
       <figure>
         <img src="static/images/GPT-2-LLaMA-2x3-Size_Comparison_global_ratio.png" alt="Global diagonal-dominance ratios across GPT-2 and LLaMA scales" />
-        <figcaption><strong>Figure 1.</strong> Global diagonal-dominance ratios across training. Top: GPT-2
+        <figcaption><strong>Diagonal dominance across training.</strong> Global diagonal-dominance ratios. Top: GPT-2
           Small/Medium/Large on OpenWebText. Bottom: LLaMA 60M/130M/350M on C4. Across every scale
           $\overline{r}_{\min}$ stays above the $y=1$ line (red dashed), $\overline{r}_{\text{avg}}$
           exceeds $5$, and $\overline{r}_{\max}$ reaches the tens. <strong>Dominance strengthens with model
@@ -178,7 +218,7 @@
       </figure>
       <figure>
         <img src="static/images/9grid_ratio.png" alt="Per-parameter diagonal-dominance ratios for three representative matrices" />
-        <figcaption><strong>Figure 2.</strong> The same pattern at the individual-matrix level: per-parameter
+        <figcaption><strong>Per-parameter view.</strong> The same pattern at the individual-matrix level: per-parameter
           $r_{\text{avg}}, r_{\min}, r_{\max}$ for three representative weight matrices &mdash; all ratios
           climb above $1$ within the first few hundred steps and stay there.</figcaption>
       </figure>
@@ -202,7 +242,7 @@
       </div>
       <figure>
         <img src="static/images/vennRMNP.png" alt="Worst-case problems versus the structured problems neural networks actually pose" />
-        <figcaption><strong>Figure 3.</strong> The worst-case problem for an algorithm need not capture the
+        <figcaption><strong>Worst-case &ne; neural-network problems.</strong> The worst-case problem for an algorithm need not capture the
           structure of real neural-network optimization. We analyze the concrete settings (deep linear,
           two-layer ReLU, &hellip;) rather than the worst case.</figcaption>
       </figure>
@@ -294,14 +334,13 @@
   <!-- ===== 5. Results ===== -->
   <section id="results" class="section alt">
     <div class="container">
-      <span class="eyebrow">Results</span>
-      <h2>An order-of-magnitude cheaper, with no loss in quality</h2>
+      <span class="eyebrow">Efficiency</span>
+      <h2>An order-of-magnitude cheaper preconditioner</h2>
 
-      <h3 class="sub">Preconditioning is 13&ndash;44&times; faster</h3>
       <div class="container narrow" style="padding:0;">
         <figure style="margin-top:8px;">
           <img src="static/images/time_scaling.png" alt="Wall-clock preconditioning time of RMNP vs Muon across model sizes" />
-          <figcaption><strong>Figure 4.</strong> Wall-clock time for 100 preconditioning steps. As model
+          <figcaption><strong>Preconditioning wall-clock time.</strong> Time for 100 preconditioning steps. As model
             size grows, Newton&ndash;Schulz becomes a dominant bottleneck while RMNP stays cheap.</figcaption>
         </figure>
         <div class="table-wrap">
@@ -323,38 +362,6 @@
         </div>
         <p class="caption-note">Preconditioning time over 100 steps, batch size 16, single RTX&nbsp;Pro&nbsp;6000 GPU.</p>
       </div>
-
-      <h3 class="sub">RMNP attains the lowest perplexity in every setting</h3>
-      <figure>
-        <img src="static/images/combined_bar.png" alt="Final validation perplexity across LLaMA, GPT-2 FineWeb-Edu, and GPT-2 OpenWebText" />
-        <figcaption><strong>Figure 5.</strong> Final validation perplexity ($\downarrow$). Left: LLaMA on
-          C4. Middle: GPT-2 on FineWeb-Edu-100B. Right: GPT-2 on OpenWebText.</figcaption>
-      </figure>
-      <div class="table-wrap">
-        <table class="wide">
-          <thead>
-            <tr>
-              <th></th>
-              <th class="grp" colspan="4">LLaMA on C4</th>
-              <th class="grp" colspan="4">GPT-2 on FineWeb-Edu-100B</th>
-              <th class="grp" colspan="3">GPT-2 on OpenWebText</th>
-            </tr>
-            <tr>
-              <th></th>
-              <th class="grp">60M</th><th>130M</th><th>350M</th><th>1B</th>
-              <th class="grp">Small</th><th>Medium</th><th>Large</th><th>XLarge</th>
-              <th class="grp">Small</th><th>Medium</th><th>Large</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>AdamW</td><td>33.28</td><td>23.24</td><td>17.08</td><td>15.33</td><td>23.85</td><td>18.19</td><td>14.81</td><td>13.12</td><td>24.19</td><td>18.80</td><td>15.27</td></tr>
-            <tr><td>Muon</td><td>29.58</td><td>22.42</td><td>16.87</td><td>14.13</td><td>22.71</td><td>17.13</td><td>14.16</td><td>12.97</td><td>22.86</td><td>17.38</td><td>14.67</td></tr>
-            <tr class="row-ours"><td>RMNP</td><td class="best">28.95</td><td class="best">22.14</td><td class="best">16.85</td><td class="best">13.75</td><td class="best">22.60</td><td class="best">17.07</td><td class="best">13.75</td><td class="best">12.58</td><td class="best">22.82</td><td class="best">17.31</td><td class="best">14.43</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="caption-note">Final validation perplexity ($\downarrow$); best per column in <strong>bold</strong>
-        (Table&nbsp;17 in the paper).</p>
     </div>
   </section>
 
