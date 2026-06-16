@@ -240,8 +240,53 @@ tbody td:last-child { font-weight: 700; color: var(--brand-ink); }
 tr.row-ours td { background: #f3eeff; }
 tr.row-ours td:first-child { font-weight: 700; color: var(--brand-ink); }
 
+/* Wide perplexity table: don't brand-color the last column */
+table.wide td:last-child { font-weight: inherit; color: var(--ink-soft); }
+table.wide { font-size: .86rem; }
+table.wide td, table.wide th { padding: 9px 9px; }
+table.wide td.best { font-weight: 700; color: var(--brand-ink); }
+table.wide thead th.grp { border-left: 1px solid rgba(255,255,255,.18); }
+
+/* ===================== Callout / question box ===================== */
+.callout {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--line);
+  border-left: 4px solid var(--brand);
+  border-radius: var(--radius); padding: 20px 24px; margin: 26px 0;
+  box-shadow: var(--shadow-md);
+}
+.callout .q-ico { font-size: 1.5rem; line-height: 1.2; }
+.callout p { margin: 0; color: var(--ink); }
+.callout strong { color: var(--brand-ink); }
+
+/* Numbered "key facts" list */
+.facts { display: grid; gap: 14px; margin: 24px 0; }
+.fact {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow-sm);
+}
+.fact .num {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; font-weight: 800; color: #fff;
+  background: var(--grad-brand); box-shadow: var(--shadow-brand);
+}
+.fact p { margin: 0; font-size: .97rem; }
+
+/* Section eyebrow + workshop pill */
+.eyebrow {
+  display: inline-block; font-size: .78rem; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--brand); margin-bottom: 6px; text-align: center; width: 100%;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700;
+  color: var(--teal); background: rgba(22,184,166,.10);
+  border: 1px solid rgba(22,184,166,.28);
+}
+
 /* ===================== BibTeX ===================== */
-.bibtex-box { position: relative; }
+.bibtex-box { position: relative; margin-bottom: 26px; }
 .bibtex-box pre {
   background: #1f1b30; color: #e9e6ff; border-radius: var(--radius);
   padding: 24px; overflow-x: auto; box-shadow: var(--shadow-lg);
