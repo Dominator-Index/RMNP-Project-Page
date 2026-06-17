@@ -343,8 +343,38 @@
     </div>
   </section>
 
+  <!-- ===== 6. Convergence ===== -->
+  <section id="convergence" class="section">
+    <div class="container narrow">
+      <span class="eyebrow">Theory</span>
+      <h2>Non-convex convergence guarantees</h2>
+      <p>
+        Under standard non-convex assumptions, RMNP matches the best-known Muon guarantees. Under
+        $\lVert\cdot\rVert_F$-smoothness it attains $\mathcal{O}(m^2 L_F \sigma^2 \Delta \epsilon^{-4})$;
+        under the matched $\lVert\cdot\rVert_{\infty,2}$-smoothness it improves to
+        $\mathcal{O}(m L_{\infty,2} \sigma^2 \Delta \epsilon^{-4})$ &mdash; a quadratic gain in the
+        dimension dependence, mirroring Muon's improvement under nuclear-norm geometry, and reaching the
+        information-theoretic minimax-optimal rate.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Method</th><th>Smoothness</th><th>Criterion</th><th>Complexity</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Muon</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_*$</td><td>$\mathcal{O}(m^2 L\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr><td>Muon</td><td>$L_*$</td><td>$\lVert\nabla f\rVert_*$</td><td>$\mathcal{O}(m L_*\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr class="row-ours"><td>RMNP</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_F$</td><td>$\mathcal{O}(m^2 L_F\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr class="row-ours"><td>RMNP</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_{1,2}$</td><td>$\mathcal{O}(m^2 L_F\sigma^2\Delta\epsilon^{-4})$</td></tr>
+            <tr class="row-ours"><td>RMNP</td><td>$L_{\infty,2}$</td><td>$\lVert\nabla f\rVert_{1,2}$</td><td>$\mathcal{O}(m L_{\infty,2}\sigma^2\Delta\epsilon^{-4})$</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== Main result: perplexity ===== -->
-  <section id="headline" class="section">
+  <section id="headline" class="section alt">
     <div class="container">
       <span class="eyebrow">Main result</span>
       <h2>RMNP attains the lowest perplexity in every setting</h2>
@@ -380,36 +410,6 @@
       </div>
       <p class="caption-note">Final validation perplexity ($\downarrow$); best per column in <strong>bold</strong>
         (Table&nbsp;17 in the paper).</p>
-    </div>
-  </section>
-
-  <!-- ===== 6. Convergence ===== -->
-  <section id="convergence" class="section alt">
-    <div class="container narrow">
-      <span class="eyebrow">Theory</span>
-      <h2>Non-convex convergence guarantees</h2>
-      <p>
-        Under standard non-convex assumptions, RMNP matches the best-known Muon guarantees. Under
-        $\lVert\cdot\rVert_F$-smoothness it attains $\mathcal{O}(m^2 L_F \sigma^2 \Delta \epsilon^{-4})$;
-        under the matched $\lVert\cdot\rVert_{\infty,2}$-smoothness it improves to
-        $\mathcal{O}(m L_{\infty,2} \sigma^2 \Delta \epsilon^{-4})$ &mdash; a quadratic gain in the
-        dimension dependence, mirroring Muon's improvement under nuclear-norm geometry, and reaching the
-        information-theoretic minimax-optimal rate.
-      </p>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Method</th><th>Smoothness</th><th>Criterion</th><th>Complexity</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Muon</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_*$</td><td>$\mathcal{O}(m^2 L\sigma^2\Delta\epsilon^{-4})$</td></tr>
-            <tr><td>Muon</td><td>$L_*$</td><td>$\lVert\nabla f\rVert_*$</td><td>$\mathcal{O}(m L_*\sigma^2\Delta\epsilon^{-4})$</td></tr>
-            <tr class="row-ours"><td>RMNP</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_F$</td><td>$\mathcal{O}(m^2 L_F\sigma^2\Delta\epsilon^{-4})$</td></tr>
-            <tr class="row-ours"><td>RMNP</td><td>$L_F$</td><td>$\lVert\nabla f\rVert_{1,2}$</td><td>$\mathcal{O}(m^2 L_F\sigma^2\Delta\epsilon^{-4})$</td></tr>
-            <tr class="row-ours"><td>RMNP</td><td>$L_{\infty,2}$</td><td>$\lVert\nabla f\rVert_{1,2}$</td><td>$\mathcal{O}(m L_{\infty,2}\sigma^2\Delta\epsilon^{-4})$</td></tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   </section>
 
