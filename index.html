@@ -79,9 +79,9 @@
       </div>
 
       <p class="tldr"><strong>TL;DR:</strong> Why does Muon's orthogonalization help neural networks?
-        We show it <em>adapts to the row-block-diagonal structure</em> of the Transformer Hessian.
-        In that regime the expensive Newton&ndash;Schulz step provably collapses to a single
-        row-wise&nbsp;$\ell_2$ normalization &mdash; the same update at a fraction of the cost
+        Because it adapts to the row-block-diagonal structure of the Transformer Hessian &mdash; and in that
+        regime the costly Newton&ndash;Schulz step provably collapses to a single row-wise&nbsp;$\ell_2$
+        normalization: the same update at a fraction of the cost
         ($\mathcal{O}(mn\cdot\min(m,n)) \to \mathcal{O}(mn)$, a <strong>13&ndash;44&times;</strong> speedup).</p>
     </div>
   </header>
@@ -91,10 +91,10 @@
     <div class="container narrow">
       <figure>
         <img src="static/images/pre4.png" alt="Transformer layer-wise Hessian vs. the Muon and RMNP preconditioners" />
-        <figcaption><strong>The central picture.</strong> The Transformer layer-wise Hessian (left) is
+        <figcaption><strong>The big picture.</strong> The Transformer layer-wise Hessian (left) is
           <em>row-block-diagonal dominant</em>. Muon's implicit preconditioner
           $H_{\text{MUON}}=(V_tV_t^\top)^{1/2}\otimes I_n$ (middle) matches that structure only when
-          $V_tV_t^\top$ is diagonal &mdash; in which case it equals the RMNP preconditioner
+          $V_tV_t^\top$ is diagonal &mdash; in which case it coincides with the RMNP preconditioner
           $H_{\text{RMNP}}=(\operatorname{diag}(V_tV_t^\top))^{1/2}\otimes I_n$ (right).</figcaption>
       </figure>
     </div>
@@ -121,26 +121,229 @@
       <h2>Abstract</h2>
       <p>
         Preconditioned adaptive methods capture rich curvature information of the loss landscape, and the
-        central challenge is balancing preconditioning effectiveness against computational efficiency.
-        <strong>Muon</strong> stands out by using Newton&ndash;Schulz iteration to obtain preconditioned
-        updates without explicitly constructing the preconditioning matrix &mdash; yet its efficiency
-        still leaves room for improvement.
+        central challenge is balancing preconditioning effectiveness against computational cost.
+        <strong>Muon</strong> stands out by using a Newton&ndash;Schulz iteration to form the preconditioned
+        update without ever materializing the preconditioning matrix &mdash; yet its efficiency still leaves
+        room for improvement.
       </p>
       <p>
-        We introduce <strong>RMNP</strong> (Row-Momentum Normalized Preconditioning), which replaces
+        We introduce <strong>RMNP</strong> (Row-Momentum Normalized Preconditioning), which replaces the
         Newton&ndash;Schulz iteration with a simple row-wise ($d_{\text{in}}$) $\ell_2$ normalization,
-        motivated by the empirically observed diagonal block structure of the Transformer layer-wise
-        Hessian. We empirically verify that orthogonalization and row-wise $\ell_2$ normalization are
-        asymptotically equivalent for Transformers. This reduces per-iteration complexity from
-        $\mathcal{O}(mn\cdot\min(m,n))$ to $\mathcal{O}(mn)$ while maintaining comparable performance.
-        Theoretically, we establish non-convex convergence guarantees matching recent results for Muon and
-        reaching minimax-optimal complexity. Extensive LLM pretraining experiments show RMNP delivers
-        competitive performance while substantially reducing preconditioning wall-clock time.
+        motivated by the empirically observed diagonal-block structure of the Transformer layer-wise
+        Hessian. We show that, for Transformers, orthogonalization and row-wise $\ell_2$ normalization are
+        asymptotically equivalent. This cuts the per-iteration cost from $\mathcal{O}(mn\cdot\min(m,n))$ to
+        $\mathcal{O}(mn)$ while preserving optimization quality. Theoretically, we establish non-convex
+        convergence guarantees that match the best-known results for Muon and attain minimax-optimal
+        complexity. Across extensive LLM pretraining, RMNP delivers competitive performance while
+        substantially reducing preconditioning wall-clock time.
       </p>
     </div>
   </section>
 
-  <!-- ===== Main result (headline) ===== -->
+  <!-- ===== 1. Motivation: preconditioner structure vs Hessian structure ===== -->
+  <section id="motivation" class="section alt">
+    <div class="container narrow">
+      <span class="eyebrow">Motivation</span>
+      <h2>Preconditioner structure vs. Hessian structure</h2>
+      <p>
+        A growing body of work analyzes Muon as an abstract steepest-descent / trust-region method. That
+        view is powerful, but it lives in a worst-case problem class and cannot explain <em>why</em>
+        orthogonalization is specifically suited to neural networks. We instead start from the network's
+        concrete curvature.
+      </p>
+      <p>
+        Recent work shows that the layer-wise Hessian of a Transformer is <strong>row-block diagonally
+        dominant</strong>: unfolded into $m\times m$ blocks of size $n\times n$, the diagonal blocks
+        dominate. By Lemma&nbsp;4 of Shampoo, Muon descends in the metric
+      </p>
+      <p class="display-eq">$$ H_{\text{MUON}} = P_t^{1/2}\otimes I_n, \qquad P_t := V_tV_t^\top \in \mathbb{R}^{m\times m}. $$</p>
+      <p>
+        So $H_{\text{MUON}}$ is block-diagonal precisely when $P_t$ is diagonal &mdash; which reduces the
+        whole question to a clean property of the gradient/momentum:
+      </p>
+      <div class="callout">
+        <span class="q-ico">❓</span>
+        <p><strong>Question.</strong> Is $V_tV_t^\top$ (equivalently $G_tG_t^\top$ at initialization)
+          diagonally dominant for neural-network weight matrices?</p>
+      </div>
+      <p>We answer this two ways &mdash; <strong>empirically</strong>, along the entire training trajectory,
+        and <strong>theoretically</strong>, at initialization. Both say <em>yes</em>.</p>
+    </div>
+  </section>
+
+  <!-- ===== 2. Empirical exploration: diagonal dominance ===== -->
+  <section id="empirical" class="section">
+    <div class="container">
+      <span class="eyebrow">Empirical exploration</span>
+      <h2>The Muon preconditioner is diagonally dominant throughout training</h2>
+      <div class="container narrow" style="padding:0;">
+        <p>
+          For each row $i$ of the Gram matrix $V_tV_t^\top$ we measure the ratio of the diagonal entry to
+          the average off-diagonal magnitude,
+          $r_i = \dfrac{(V_tV_t^\top)_{ii}}{\frac{1}{m-1}\sum_{j\neq i}\lvert (V_tV_t^\top)_{ij}\rvert}$,
+          and aggregate it into $\overline{r}_{\text{avg}}, \overline{r}_{\min}, \overline{r}_{\max}$.
+          A ratio above $1$ means the diagonal dominates.
+        </p>
+      </div>
+      <figure>
+        <img src="static/images/GPT-2-LLaMA-2x3-Size_Comparison_global_ratio.png" alt="Global diagonal-dominance ratios across GPT-2 and LLaMA scales" />
+        <figcaption><strong>Diagonal dominance across training.</strong> Global diagonal-dominance ratios. Top: GPT-2
+          Small/Medium/Large on OpenWebText. Bottom: LLaMA 60M/130M/350M on C4. At every scale
+          $\overline{r}_{\min}$ stays above the $y=1$ line (red dashed), $\overline{r}_{\text{avg}}$
+          exceeds $5$, and $\overline{r}_{\max}$ reaches the tens. <strong>Dominance strengthens with model
+          size.</strong></figcaption>
+      </figure>
+      <figure>
+        <img src="static/images/Combined_9grid_ratio.png" alt="Per-parameter diagonal-dominance ratios for three representative matrices across GPT-2 Small, Medium, and Large" />
+        <figcaption><strong>Per-parameter view.</strong> The same pattern holds at the individual-matrix
+          level: per-parameter $r_{\text{avg}}, r_{\min}, r_{\max}$ for three representative weight matrices
+          in GPT-2 Small (125M), Medium (355M), and Large (770M) &mdash; all ratios climb above $1$ within
+          the first few hundred steps and stay there.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===== 3. Additional theory at initialization (HiLD workshop) ===== -->
+  <section id="theory-init" class="section alt">
+    <div class="container">
+      <span class="eyebrow">Additional theoretical result</span>
+      <h2>Why is $V_tV_t^\top$ diagonally dominant? A proof at initialization</h2>
+      <p style="text-align:center;">
+        <span class="pill">🔬 Companion paper · HiLD 2026 Workshop on High-dimensional Learning Dynamics</span>
+      </p>
+      <div class="container narrow" style="padding:0;">
+        <p>
+          Worst-case, problem-agnostic analyses cannot explain why a norm fits neural networks &mdash; on
+          the worst case, every norm looks equally justified. Real networks occupy a far smaller corner of
+          that problem class, so we analyze the network directly.
+        </p>
+      </div>
+      <figure class="fig-sm">
+        <img src="static/images/vennRMNP.png" alt="Worst-case problems versus the structured problems neural networks actually pose" />
+        <figcaption><strong>Worst-case &ne; neural-network problems.</strong> The worst-case problem for an
+          algorithm need not capture the structure of real neural-network optimization. We analyze the
+          concrete settings (deep linear, two-layer ReLU, &hellip;) rather than the worst case.</figcaption>
+      </figure>
+      <div class="container narrow" style="padding:0;">
+        <p>
+          At a Gaussian initialization we compute the gradient self outer-product $\mathbb{E}[GG^\top]$ in
+          <em>closed form</em> for three standard settings. In each, the diagonal entries outgrow the
+          off-diagonal ones as the width grows &mdash; so $V_tV_t^\top$ is asymptotically diagonal.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Setting</th><th>Diagonal</th><th>Off-diagonal</th><th>Grows with</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Symmetric matrix factorization</td><td>$\Theta(k^3)$</td><td>$\Theta(k^2)$</td><td>width $k$</td></tr>
+              <tr><td>Deep linear &mdash; hidden layer $i$</td><td>$\Theta(V_i s_i)$</td><td>$0$ (exactly diagonal)</td><td>inner widths</td></tr>
+              <tr><td>Deep linear &mdash; output layer</td><td>$\Theta(V_L s_L)$</td><td>$\Theta(\prod_{j&lt;L} d_j)$</td><td>inner widths</td></tr>
+              <tr><td>Two-layer ReLU &mdash; $W_1$</td><td>$\Theta(d_0 d_2^2 + d_0 d_1 d_2)$</td><td>$\Theta(d_0 d_2)$</td><td>$d_1$</td></tr>
+              <tr><td>Two-layer ReLU &mdash; $W_2$</td><td>$\Theta(d_0^2 d_1^2)$</td><td>$\Theta(d_1)$</td><td>$d_1$</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption-note">Orders of $\mathbb{E}[GG^\top]$ at a Gaussian initialization. In every row the
+          diagonal dominates as the relevant width grows.</p>
+
+        <p style="margin-top:22px;">Two facts follow from this analysis:</p>
+        <div class="facts">
+          <div class="fact">
+            <span class="num">1</span>
+            <p><strong>The preconditioner aligns with the Hessian.</strong> $P_t=V_tV_t^\top$ becomes
+              diagonal as the width grows, so $H_{\text{MUON}}=P_t^{1/2}\otimes I_n$ becomes block-diagonal
+              in the Hessian's row-block structure.</p>
+          </div>
+          <div class="fact">
+            <span class="num">2</span>
+            <p><strong>Orthogonalization <em>is</em> row normalization.</strong> When $V_tV_t^\top$ is
+              diagonal, $(V_tV_t^\top)^{-1/2}V_t$ is exactly each row of $V_t$ divided by its own $\ell_2$
+              norm. Newton&ndash;Schulz and row normalization become the same operation &mdash; this is RMNP.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. Method ===== -->
+  <section id="method" class="section">
+    <div class="container narrow">
+      <span class="eyebrow">From structure to algorithm</span>
+      <h2>RMNP</h2>
+      <p>
+        The structure above makes the algorithm almost inevitable: keep the dominant diagonal blocks of the
+        preconditioner and discard the rest. The preconditioned update then reduces to a plain row-wise
+        $\ell_2$ normalization of the momentum matrix:
+      </p>
+      <p class="display-eq">
+        $$ \left[\left(\operatorname{diag}(V_t V_t^\top)\right)^{-1/2} V_t\right]_{i,:}
+           = \frac{V_{t,i:}}{\sqrt{(V_t V_t^\top)_{ii}}}
+           = \frac{V_{t,i:}}{\lVert V_{t,i:}\rVert_{\ell_2}}. $$
+      </p>
+
+      <div class="algo-grid">
+        <div class="algo">
+          <h4>Muon</h4>
+          <ol>
+            <li>$G_t \leftarrow \nabla f(W_t; \xi^t)$</li>
+            <li>$V_t \leftarrow \beta V_{t-1} + (1-\beta) G_t$</li>
+            <li class="hl-muon">$D_t \leftarrow \mathrm{NS}_5(V_t) = (V_tV_t^\top)^{-1/2} V_t$</li>
+            <li>$W_{t+1} \leftarrow W_t - \eta_t D_t$</li>
+          </ol>
+        </div>
+        <div class="algo">
+          <h4>RMNP <span class="ours">(ours)</span></h4>
+          <ol>
+            <li>$G_t \leftarrow \nabla f(W_t; \xi^t)$</li>
+            <li>$V_t \leftarrow \beta V_{t-1} + (1-\beta) G_t$</li>
+            <li class="hl-rmnp">$D_t \leftarrow \mathrm{RN}(V_t) = (\operatorname{diag}(V_tV_t^\top))^{-1/2} V_t$</li>
+            <li>$W_{t+1} \leftarrow W_t - \eta_t D_t$</li>
+          </ol>
+        </div>
+      </div>
+      <p class="caption-note">Same momentum, same matrix-level adaptivity &mdash; the $\mathcal{O}(mn\cdot\min(m,n))$
+        orthogonalization becomes an $\mathcal{O}(mn)$ row normalization. Row normalization also needs only a
+        complete row, enabling column-wise sharding under PyTorch FSDP2 without the all-gather that Muon
+        requires.</p>
+    </div>
+  </section>
+
+  <!-- ===== 5. Results: efficiency ===== -->
+  <section id="results" class="section alt">
+    <div class="container">
+      <span class="eyebrow">Efficiency</span>
+      <h2>An order-of-magnitude cheaper preconditioner</h2>
+
+      <div class="container narrow" style="padding:0;">
+        <figure style="margin-top:8px;">
+          <img src="static/images/time_scaling.png" alt="Wall-clock preconditioning time of RMNP vs Muon across model sizes" />
+          <figcaption><strong>Preconditioning wall-clock time.</strong> Time for 100 preconditioning steps.
+            As the model grows, Newton&ndash;Schulz becomes a dominant bottleneck while RMNP stays cheap.</figcaption>
+        </figure>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Model size</th><th>Muon (s)</th><th>RMNP (s)</th><th>Speedup</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>60M</td><td>1.480</td><td>0.115</td><td>12.9&times;</td></tr>
+              <tr><td>125M</td><td>2.975</td><td>0.201</td><td>14.8&times;</td></tr>
+              <tr><td>200M</td><td>4.140</td><td>0.260</td><td>15.9&times;</td></tr>
+              <tr><td>355M</td><td>7.380</td><td>0.401</td><td>18.4&times;</td></tr>
+              <tr><td>500M</td><td>15.720</td><td>0.462</td><td>34.0&times;</td></tr>
+              <tr><td>770M</td><td>27.070</td><td>0.611</td><td>44.3&times;</td></tr>
+              <tr><td>1.3B</td><td>30.570</td><td>0.783</td><td>39.0&times;</td></tr>
+              <tr><td>1.5B</td><td>36.650</td><td>0.855</td><td>42.9&times;</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption-note">Preconditioning time over 100 steps, batch size 16, single RTX&nbsp;Pro&nbsp;6000 GPU.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Main result: perplexity ===== -->
   <section id="headline" class="section">
     <div class="container">
       <span class="eyebrow">Main result</span>
@@ -180,220 +383,17 @@
     </div>
   </section>
 
-  <!-- ===== 1. Motivation: preconditioner shape vs Hessian shape ===== -->
-  <section id="motivation" class="section alt">
-    <div class="container narrow">
-      <span class="eyebrow">Motivation</span>
-      <h2>Preconditioner shape vs. Hessian shape</h2>
-      <p>
-        A growing body of work studies Muon as an abstract steepest-descent / trust-region method. That
-        view is powerful, but it lives in a worst-case problem class and cannot say <em>why</em>
-        orthogonalization is specifically well-suited to neural networks. We instead start from the
-        concrete curvature of the network.
-      </p>
-      <p>
-        Recent work shows the layer-wise Hessian of a Transformer is <strong>row-block diagonally
-        dominant</strong>: unfolded into $m\times m$ blocks of size $n\times n$, the diagonal blocks
-        dominate. By Lemma&nbsp;4 of Shampoo, Muon descends in the metric
-      </p>
-      <p class="display-eq">$$ H_{\text{MUON}} = P_t^{1/2}\otimes I_n, \qquad P_t := V_tV_t^\top \in \mathbb{R}^{m\times m}. $$</p>
-      <p>
-        So $H_{\text{MUON}}$ takes exactly block-diagonal form precisely when $P_t$ is diagonal &mdash;
-        and the question reduces to a clean property of the gradient/momentum:
-      </p>
-      <div class="callout">
-        <span class="q-ico">❓</span>
-        <p><strong>Question.</strong> Is $V_tV_t^\top$ (equivalently $G_tG_t^\top$ at initialization)
-          diagonally dominant for neural-network weight matrices?</p>
-      </div>
-      <p>We answer this two ways: <strong>empirically</strong> along the entire training trajectory, and
-        <strong>theoretically</strong> at initialization. Both say <em>yes</em>.</p>
-    </div>
-  </section>
-
-  <!-- ===== 2. Empirical exploration: diagonal dominance ===== -->
-  <section id="empirical" class="section">
-    <div class="container">
-      <span class="eyebrow">Empirical exploration</span>
-      <h2>The Muon preconditioner is diagonally dominant throughout training</h2>
-      <div class="container narrow" style="padding:0;">
-        <p>
-          For each row $i$ of the Gram matrix $V_tV_t^\top$ we measure the ratio of the diagonal entry to
-          the average off-diagonal magnitude,
-          $r_i = \dfrac{(V_tV_t^\top)_{ii}}{\frac{1}{m-1}\sum_{j\neq i}\lvert (V_tV_t^\top)_{ij}\rvert}$,
-          and aggregate it into $\overline{r}_{\text{avg}}, \overline{r}_{\min}, \overline{r}_{\max}$.
-          A ratio above $1$ means the diagonal dominates.
-        </p>
-      </div>
-      <figure>
-        <img src="static/images/GPT-2-LLaMA-2x3-Size_Comparison_global_ratio.png" alt="Global diagonal-dominance ratios across GPT-2 and LLaMA scales" />
-        <figcaption><strong>Diagonal dominance across training.</strong> Global diagonal-dominance ratios. Top: GPT-2
-          Small/Medium/Large on OpenWebText. Bottom: LLaMA 60M/130M/350M on C4. Across every scale
-          $\overline{r}_{\min}$ stays above the $y=1$ line (red dashed), $\overline{r}_{\text{avg}}$
-          exceeds $5$, and $\overline{r}_{\max}$ reaches the tens. <strong>Dominance strengthens with model
-          size.</strong></figcaption>
-      </figure>
-      <figure>
-        <img src="static/images/Combined_9grid_ratio.png" alt="Per-parameter diagonal-dominance ratios for three representative matrices across GPT-2 Small, Medium, and Large" />
-        <figcaption><strong>Per-parameter view.</strong> The same pattern at the individual-matrix level:
-          per-parameter $r_{\text{avg}}, r_{\min}, r_{\max}$ for three representative weight matrices in
-          GPT-2 Small (125M), Medium (355M), and Large (770M) &mdash; all ratios climb above $1$ within the
-          first few hundred steps and stay there.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <!-- ===== 3. Additional theory at initialization (HiLD workshop) ===== -->
-  <section id="theory-init" class="section alt">
-    <div class="container">
-      <span class="eyebrow">Additional theoretical result</span>
-      <h2>Why is $V_tV_t^\top$ diagonally dominant? A proof at initialization</h2>
-      <p style="text-align:center;">
-        <span class="pill">🔬 Companion paper · HiLD 2026 Workshop on High-dimensional Learning Dynamics</span>
-      </p>
-      <div class="container narrow" style="padding:0;">
-        <p>
-          Worst-case, problem-agnostic analyses cannot explain a norm's fit to neural networks &mdash; on
-          the worst-case problem every norm looks equally justified. Real networks live in a much smaller
-          corner of that class, so we analyze the network directly.
-        </p>
-      </div>
-      <figure class="fig-sm">
-        <img src="static/images/vennRMNP.png" alt="Worst-case problems versus the structured problems neural networks actually pose" />
-        <figcaption><strong>Worst-case &ne; neural-network problems.</strong> The worst-case problem for an algorithm need not capture the
-          structure of real neural-network optimization. We analyze the concrete settings (deep linear,
-          two-layer ReLU, &hellip;) rather than the worst case.</figcaption>
-      </figure>
-      <div class="container narrow" style="padding:0;">
-        <p>
-          At a Gaussian initialization we compute the gradient self outer-product $\mathbb{E}[GG^\top]$ in
-          <em>closed form</em> for three standard settings. In each, the diagonal entries outgrow the
-          off-diagonal ones as the width grows &mdash; so $V_tV_t^\top$ is asymptotically diagonal.
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Setting</th><th>Diagonal</th><th>Off-diagonal</th><th>Grows with</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Symmetric matrix factorization</td><td>$\Theta(k^3)$</td><td>$\Theta(k^2)$</td><td>width $k$</td></tr>
-              <tr><td>Deep linear &mdash; hidden layer $i$</td><td>$\Theta(V_i s_i)$</td><td>$0$ (exactly diagonal)</td><td>inner widths</td></tr>
-              <tr><td>Deep linear &mdash; output layer</td><td>$\Theta(V_L s_L)$</td><td>$\Theta(\prod_{j&lt;L} d_j)$</td><td>inner widths</td></tr>
-              <tr><td>Two-layer ReLU &mdash; $W_1$</td><td>$\Theta(d_0 d_2^2 + d_0 d_1 d_2)$</td><td>$\Theta(d_0 d_2)$</td><td>$d_1$</td></tr>
-              <tr><td>Two-layer ReLU &mdash; $W_2$</td><td>$\Theta(d_0^2 d_1^2)$</td><td>$\Theta(d_1)$</td><td>$d_1$</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="caption-note">Orders of $\mathbb{E}[GG^\top]$ at a Gaussian initialization. In every row the
-          diagonal dominates as the relevant width grows.</p>
-
-        <p style="margin-top:22px;">Two facts come out of this analysis:</p>
-        <div class="facts">
-          <div class="fact">
-            <span class="num">1</span>
-            <p><strong>The preconditioner aligns with the Hessian.</strong> $P_t=V_tV_t^\top$ becomes
-              diagonal as width grows, so $H_{\text{MUON}}=P_t^{1/2}\otimes I_n$ becomes block-diagonal in
-              the Hessian's row-block structure.</p>
-          </div>
-          <div class="fact">
-            <span class="num">2</span>
-            <p><strong>Orthogonalization <em>is</em> row normalization.</strong> When $V_tV_t^\top$ is
-              diagonal, $(V_tV_t^\top)^{-1/2}V_t$ is exactly each row of $V_t$ divided by its own $\ell_2$
-              norm. Newton&ndash;Schulz and row normalization become the same operation &mdash; this is RMNP.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== 4. Method ===== -->
-  <section id="method" class="section">
-    <div class="container narrow">
-      <span class="eyebrow">From structure to algorithm</span>
-      <h2>RMNP</h2>
-      <p>
-        The structure above makes the algorithm inevitable: keep the dominant diagonal blocks of the
-        preconditioner and drop the rest. The preconditioned update then collapses to a plain row-wise
-        $\ell_2$ normalization of the momentum matrix:
-      </p>
-      <p class="display-eq">
-        $$ \left[\left(\operatorname{diag}(V_t V_t^\top)\right)^{-1/2} V_t\right]_{i,:}
-           = \frac{V_{t,i:}}{\sqrt{(V_t V_t^\top)_{ii}}}
-           = \frac{V_{t,i:}}{\lVert V_{t,i:}\rVert_{\ell_2}}. $$
-      </p>
-
-      <div class="algo-grid">
-        <div class="algo">
-          <h4>Muon</h4>
-          <ol>
-            <li>$G_t \leftarrow \nabla f(W_t; \xi^t)$</li>
-            <li>$V_t \leftarrow \beta V_{t-1} + (1-\beta) G_t$</li>
-            <li class="hl-muon">$D_t \leftarrow \mathrm{NS}_5(V_t) = (V_tV_t^\top)^{-1/2} V_t$</li>
-            <li>$W_{t+1} \leftarrow W_t - \eta_t D_t$</li>
-          </ol>
-        </div>
-        <div class="algo">
-          <h4>RMNP <span class="ours">(ours)</span></h4>
-          <ol>
-            <li>$G_t \leftarrow \nabla f(W_t; \xi^t)$</li>
-            <li>$V_t \leftarrow \beta V_{t-1} + (1-\beta) G_t$</li>
-            <li class="hl-rmnp">$D_t \leftarrow \mathrm{RN}(V_t) = (\operatorname{diag}(V_tV_t^\top))^{-1/2} V_t$</li>
-            <li>$W_{t+1} \leftarrow W_t - \eta_t D_t$</li>
-          </ol>
-        </div>
-      </div>
-      <p class="caption-note">Same momentum, same matrix-level adaptivity &mdash; the $\mathcal{O}(mn\cdot\min(m,n))$
-        orthogonalization becomes an $\mathcal{O}(mn)$ row normalization. RMNP's row normalization also needs
-        only a complete row, enabling column-wise sharding under PyTorch FSDP2 without the all-gather Muon
-        requires.</p>
-    </div>
-  </section>
-
-  <!-- ===== 5. Results ===== -->
-  <section id="results" class="section alt">
-    <div class="container">
-      <span class="eyebrow">Efficiency</span>
-      <h2>An order-of-magnitude cheaper preconditioner</h2>
-
-      <div class="container narrow" style="padding:0;">
-        <figure style="margin-top:8px;">
-          <img src="static/images/time_scaling.png" alt="Wall-clock preconditioning time of RMNP vs Muon across model sizes" />
-          <figcaption><strong>Preconditioning wall-clock time.</strong> Time for 100 preconditioning steps. As model
-            size grows, Newton&ndash;Schulz becomes a dominant bottleneck while RMNP stays cheap.</figcaption>
-        </figure>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Model size</th><th>Muon (s)</th><th>RMNP (s)</th><th>Speedup</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>60M</td><td>1.480</td><td>0.115</td><td>12.9&times;</td></tr>
-              <tr><td>125M</td><td>2.975</td><td>0.201</td><td>14.8&times;</td></tr>
-              <tr><td>200M</td><td>4.140</td><td>0.260</td><td>15.9&times;</td></tr>
-              <tr><td>355M</td><td>7.380</td><td>0.401</td><td>18.4&times;</td></tr>
-              <tr><td>500M</td><td>15.720</td><td>0.462</td><td>34.0&times;</td></tr>
-              <tr><td>770M</td><td>27.070</td><td>0.611</td><td>44.3&times;</td></tr>
-              <tr><td>1.3B</td><td>30.570</td><td>0.783</td><td>39.0&times;</td></tr>
-              <tr><td>1.5B</td><td>36.650</td><td>0.855</td><td>42.9&times;</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="caption-note">Preconditioning time over 100 steps, batch size 16, single RTX&nbsp;Pro&nbsp;6000 GPU.</p>
-      </div>
-    </div>
-  </section>
-
   <!-- ===== 6. Convergence ===== -->
-  <section id="convergence" class="section">
+  <section id="convergence" class="section alt">
     <div class="container narrow">
       <span class="eyebrow">Theory</span>
       <h2>Non-convex convergence guarantees</h2>
       <p>
-        Under standard non-convex assumptions RMNP matches the best-known Muon guarantees. Under
+        Under standard non-convex assumptions, RMNP matches the best-known Muon guarantees. Under
         $\lVert\cdot\rVert_F$-smoothness it attains $\mathcal{O}(m^2 L_F \sigma^2 \Delta \epsilon^{-4})$;
         under the matched $\lVert\cdot\rVert_{\infty,2}$-smoothness it improves to
-        $\mathcal{O}(m L_{\infty,2} \sigma^2 \Delta \epsilon^{-4})$ &mdash; a quadratic gain in dimension
-        dependence, mirroring Muon's improvement under nuclear-norm geometry, and reaching the
+        $\mathcal{O}(m L_{\infty,2} \sigma^2 \Delta \epsilon^{-4})$ &mdash; a quadratic gain in the
+        dimension dependence, mirroring Muon's improvement under nuclear-norm geometry, and reaching the
         information-theoretic minimax-optimal rate.
       </p>
       <div class="table-wrap">
@@ -414,12 +414,12 @@
   </section>
 
   <!-- ===== Supplementary: training curves (LLM only) ===== -->
-  <section id="curves" class="section alt">
+  <section id="curves" class="section">
     <div class="container">
       <span class="eyebrow">Supplementary</span>
       <h2>Training curves</h2>
       <p class="caption-note">Per-step training and validation loss across all GPT-2 and LLaMA scales. Each
-        panel compares AdamW, Muon, and RMNP; RMNP matches or slightly improves on Muon while both clearly
+        panel compares AdamW, Muon, and RMNP; RMNP matches or slightly improves on Muon, while both clearly
         beat AdamW.</p>
       <div class="tabs-wrap">
         <div class="tabs">
@@ -469,7 +469,7 @@
   </section>
 
   <!-- ===== BibTeX ===== -->
-  <section id="bibtex" class="section">
+  <section id="bibtex" class="section alt">
     <div class="container narrow">
       <h2>BibTeX</h2>
       <div class="bibtex-box">
