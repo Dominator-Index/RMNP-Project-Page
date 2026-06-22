@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RMNP: Row-Momentum Normalized Preconditioning for Scalable Matrix-Based Optimization</title>
-  <meta name="description" content="Muon's orthogonalization works on neural networks because it adapts to the row-block-diagonal structure of the Transformer Hessian. In that regime it provably reduces to a cheap row-wise L2 normalization — RMNP." />
+  <meta name="description" content="Muon's orthogonalization works on neural networks because it adapts to the row-block-diagonal structure of the Transformer Hessian. In that regime it provably reduces to a cheap row-wise L2 normalization, which we call RMNP." />
 
   <meta property="og:title" content="RMNP: Row-Momentum Normalized Preconditioning for Scalable Matrix-Based Optimization" />
-  <meta property="og:description" content="Why does orthogonalization work on neural nets? It adapts to the Transformer Hessian's row-block structure — and there it collapses to a row-wise L2 normalization, 13-44x cheaper than Muon." />
+  <meta property="og:description" content="Why does orthogonalization work on neural nets? It adapts to the Transformer Hessian's row-block structure, and there it collapses to a row-wise L2 normalization that is 13 to 44x cheaper than Muon." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="static/images/pre4.png" />
 
@@ -79,10 +79,10 @@
       </div>
 
       <p class="tldr"><strong>TL;DR:</strong> Why does Muon's orthogonalization help neural networks?
-        Because it adapts to the row-block-diagonal structure of the Transformer Hessian &mdash; and in that
-        regime the costly Newton&ndash;Schulz step provably collapses to a single row-wise&nbsp;$\ell_2$
-        normalization: the same update at a fraction of the cost
-        ($\mathcal{O}(mn\cdot\min(m,n)) \to \mathcal{O}(mn)$, a <strong>13&ndash;44&times;</strong> speedup).</p>
+        Because it adapts to the row-block-diagonal structure of the Transformer Hessian. In that
+        regime the costly Newton-Schulz step provably collapses to a single row-wise&nbsp;$\ell_2$
+        normalization, so you get the same update at a fraction of the cost
+        ($\mathcal{O}(mn\cdot\min(m,n)) \to \mathcal{O}(mn)$, a <strong>13 to 44&times;</strong> speedup).</p>
     </div>
   </header>
 
@@ -94,7 +94,7 @@
         <figcaption><strong>The big picture.</strong> The Transformer layer-wise Hessian (left) is
           <em>row-block-diagonal dominant</em>. Muon's implicit preconditioner
           $H_{\text{MUON}}=(V_tV_t^\top)^{1/2}\otimes I_n$ (middle) matches that structure only when
-          $V_tV_t^\top$ is diagonal &mdash; in which case it coincides with the RMNP preconditioner
+          $V_tV_t^\top$ is diagonal, and in that case it coincides with the RMNP preconditioner
           $H_{\text{RMNP}}=(\operatorname{diag}(V_tV_t^\top))^{1/2}\otimes I_n$ (right).</figcaption>
       </figure>
     </div>
@@ -108,7 +108,7 @@
       <a class="video-card" href="https://recorder-v3.slideslive.com/#/share?share=112629&amp;s=5e44a9e6-91a7-48c7-98b3-852de484bbc4" target="_blank" rel="noopener" aria-label="Watch the RMNP presentation on SlidesLive">
         <span class="play">▶</span>
         <span class="vc-text">
-          <strong>RMNP &mdash; ICML 2026 presentation</strong>
+          <strong>RMNP at ICML 2026: the presentation</strong>
           <small>Recorded talk · opens on SlidesLive</small>
         </span>
       </a>
@@ -122,13 +122,13 @@
       <p>
         Preconditioned adaptive methods capture rich curvature information of the loss landscape, and the
         central challenge is balancing preconditioning effectiveness against computational cost.
-        <strong>Muon</strong> stands out by using a Newton&ndash;Schulz iteration to form the preconditioned
-        update without ever materializing the preconditioning matrix &mdash; yet its efficiency still leaves
+        <strong>Muon</strong> is a strong example. It uses a Newton-Schulz iteration to form the preconditioned
+        update without ever materializing the preconditioning matrix. Even so, its efficiency still leaves
         room for improvement.
       </p>
       <p>
         We introduce <strong>RMNP</strong> (Row-Momentum Normalized Preconditioning), which replaces the
-        Newton&ndash;Schulz iteration with a simple row-wise ($d_{\text{in}}$) $\ell_2$ normalization,
+        Newton-Schulz iteration with a simple row-wise ($d_{\text{in}}$) $\ell_2$ normalization,
         motivated by the empirically observed diagonal-block structure of the Transformer layer-wise
         Hessian. We show that, for Transformers, orthogonalization and row-wise $\ell_2$ normalization are
         asymptotically equivalent. This cuts the per-iteration cost from $\mathcal{O}(mn\cdot\min(m,n))$ to
@@ -158,16 +158,16 @@
       </p>
       <p class="display-eq">$$ H_{\text{MUON}} = P_t^{1/2}\otimes I_n, \qquad P_t := V_tV_t^\top \in \mathbb{R}^{m\times m}. $$</p>
       <p>
-        So $H_{\text{MUON}}$ is block-diagonal precisely when $P_t$ is diagonal &mdash; which reduces the
-        whole question to a clean property of the gradient/momentum:
+        So $H_{\text{MUON}}$ is block-diagonal precisely when $P_t$ is diagonal. That reduces the
+        whole question to a clean property of the gradient and the momentum:
       </p>
       <div class="callout">
         <span class="q-ico">❓</span>
         <p><strong>Question.</strong> Is $V_tV_t^\top$ (equivalently $G_tG_t^\top$ at initialization)
           diagonally dominant for neural-network weight matrices?</p>
       </div>
-      <p>We answer this two ways &mdash; <strong>empirically</strong>, along the entire training trajectory,
-        and <strong>theoretically</strong>, at initialization. Both say <em>yes</em>.</p>
+      <p>We answer this two ways. First <strong>empirically</strong>, along the entire training trajectory,
+        and then <strong>theoretically</strong>, at initialization. Both say <em>yes</em>.</p>
     </div>
   </section>
 
@@ -197,7 +197,7 @@
         <img src="static/images/Combined_9grid_ratio.png" alt="Per-parameter diagonal-dominance ratios for three representative matrices across GPT-2 Small, Medium, and Large" />
         <figcaption><strong>Per-parameter view.</strong> The same pattern holds at the individual-matrix
           level: per-parameter $r_{\text{avg}}, r_{\min}, r_{\max}$ for three representative weight matrices
-          in GPT-2 Small (125M), Medium (355M), and Large (770M) &mdash; all ratios climb above $1$ within
+          in GPT-2 Small (125M), Medium (355M), and Large (770M). All of these ratios climb above $1$ within
           the first few hundred steps and stay there.</figcaption>
       </figure>
     </div>
@@ -213,8 +213,8 @@
       </p>
       <div class="container narrow" style="padding:0;">
         <p>
-          Worst-case, problem-agnostic analyses cannot explain why a norm fits neural networks &mdash; on
-          the worst case, every norm looks equally justified. Real networks occupy a far smaller corner of
+          Worst-case, problem-agnostic analyses cannot explain why a norm fits neural networks, because on
+          the worst case every norm looks equally justified. Real networks occupy a far smaller corner of
           that problem class, so we analyze the network directly.
         </p>
       </div>
@@ -227,8 +227,8 @@
       <div class="container narrow" style="padding:0;">
         <p>
           At a Gaussian initialization we compute the gradient self outer-product $\mathbb{E}[GG^\top]$ in
-          <em>closed form</em> for three standard settings. In each, the diagonal entries outgrow the
-          off-diagonal ones as the width grows &mdash; so $V_tV_t^\top$ is asymptotically diagonal.
+          <em>closed form</em> for three standard settings. In each one, the diagonal entries outgrow the
+          off-diagonal ones as the width grows, so $V_tV_t^\top$ becomes asymptotically diagonal.
         </p>
         <div class="table-wrap">
           <table>
@@ -237,10 +237,10 @@
             </thead>
             <tbody>
               <tr><td>Symmetric matrix factorization</td><td>$\Theta(k^3)$</td><td>$\Theta(k^2)$</td><td>width $k$</td></tr>
-              <tr><td>Deep linear &mdash; hidden layer $i$</td><td>$\Theta(V_i s_i)$</td><td>$0$ (exactly diagonal)</td><td>inner widths</td></tr>
-              <tr><td>Deep linear &mdash; output layer</td><td>$\Theta(V_L s_L)$</td><td>$\Theta(\prod_{j&lt;L} d_j)$</td><td>inner widths</td></tr>
-              <tr><td>Two-layer ReLU &mdash; $W_1$</td><td>$\Theta(d_0 d_2^2 + d_0 d_1 d_2)$</td><td>$\Theta(d_0 d_2)$</td><td>$d_1$</td></tr>
-              <tr><td>Two-layer ReLU &mdash; $W_2$</td><td>$\Theta(d_0^2 d_1^2)$</td><td>$\Theta(d_1)$</td><td>$d_1$</td></tr>
+              <tr><td>Deep linear, hidden layer $i$</td><td>$\Theta(V_i s_i)$</td><td>$0$ (exactly diagonal)</td><td>inner widths</td></tr>
+              <tr><td>Deep linear, output layer</td><td>$\Theta(V_L s_L)$</td><td>$\Theta(\prod_{j&lt;L} d_j)$</td><td>inner widths</td></tr>
+              <tr><td>Two-layer ReLU, $W_1$</td><td>$\Theta(d_0 d_2^2 + d_0 d_1 d_2)$</td><td>$\Theta(d_0 d_2)$</td><td>$d_1$</td></tr>
+              <tr><td>Two-layer ReLU, $W_2$</td><td>$\Theta(d_0^2 d_1^2)$</td><td>$\Theta(d_1)$</td><td>$d_1$</td></tr>
             </tbody>
           </table>
         </div>
@@ -259,7 +259,7 @@
             <span class="num">2</span>
             <p><strong>Orthogonalization <em>is</em> row normalization.</strong> When $V_tV_t^\top$ is
               diagonal, $(V_tV_t^\top)^{-1/2}V_t$ is exactly each row of $V_t$ divided by its own $\ell_2$
-              norm. Newton&ndash;Schulz and row normalization become the same operation &mdash; this is RMNP.</p>
+              norm. Newton-Schulz and row normalization become the same operation, and that is exactly RMNP.</p>
           </div>
         </div>
       </div>
@@ -302,10 +302,10 @@
           </ol>
         </div>
       </div>
-      <p class="caption-note">Same momentum, same matrix-level adaptivity &mdash; the $\mathcal{O}(mn\cdot\min(m,n))$
-        orthogonalization becomes an $\mathcal{O}(mn)$ row normalization. Row normalization also needs only a
-        complete row, enabling column-wise sharding under PyTorch FSDP2 without the all-gather that Muon
-        requires.</p>
+      <p class="caption-note">The momentum is the same and so is the matrix-level adaptivity, but now the
+        $\mathcal{O}(mn\cdot\min(m,n))$ orthogonalization becomes an $\mathcal{O}(mn)$ row normalization.
+        Row normalization also needs only a complete row, so it allows column-wise sharding under PyTorch
+        FSDP2 without the all-gather that Muon requires.</p>
     </div>
   </section>
 
@@ -319,7 +319,7 @@
         <figure style="margin-top:8px;">
           <img src="static/images/time_scaling.png" alt="Wall-clock preconditioning time of RMNP vs Muon across model sizes" />
           <figcaption><strong>Preconditioning wall-clock time.</strong> Time for 100 preconditioning steps.
-            As the model grows, Newton&ndash;Schulz becomes a dominant bottleneck while RMNP stays cheap.</figcaption>
+            As the model grows, Newton-Schulz becomes a dominant bottleneck, while RMNP stays cheap.</figcaption>
         </figure>
         <div class="table-wrap">
           <table>
@@ -350,10 +350,10 @@
       <h2>Non-convex convergence guarantees</h2>
       <p>
         Under standard non-convex assumptions, RMNP matches the best-known Muon guarantees. Under
-        $\lVert\cdot\rVert_F$-smoothness it attains $\mathcal{O}(m^2 L_F \sigma^2 \Delta \epsilon^{-4})$;
-        under the matched $\lVert\cdot\rVert_{\infty,2}$-smoothness it improves to
-        $\mathcal{O}(m L_{\infty,2} \sigma^2 \Delta \epsilon^{-4})$ &mdash; a quadratic gain in the
-        dimension dependence, mirroring Muon's improvement under nuclear-norm geometry, and reaching the
+        $\lVert\cdot\rVert_F$-smoothness it attains $\mathcal{O}(m^2 L_F \sigma^2 \Delta \epsilon^{-4})$.
+        Under the matched $\lVert\cdot\rVert_{\infty,2}$-smoothness it improves to
+        $\mathcal{O}(m L_{\infty,2} \sigma^2 \Delta \epsilon^{-4})$, a quadratic gain in the
+        dimension dependence. This mirrors Muon's improvement under nuclear-norm geometry, and it reaches the
         information-theoretic minimax-optimal rate.
       </p>
       <div class="table-wrap">
@@ -382,8 +382,8 @@
         <img src="static/images/combined_bar.png" alt="Final validation perplexity across LLaMA, GPT-2 FineWeb-Edu, and GPT-2 OpenWebText" />
         <figcaption><strong>Final validation perplexity ($\downarrow$).</strong> Left: LLaMA on C4.
           Middle: GPT-2 on FineWeb-Edu-100B. Right: GPT-2 on OpenWebText. Across 11 model/dataset settings
-          from 60M to 1.5B, RMNP matches or beats both Muon and AdamW &mdash; while preconditioning
-          <strong>13&ndash;44&times; faster</strong>.</figcaption>
+          from 60M to 1.5B, RMNP matches or beats both Muon and AdamW, and it does so while preconditioning
+          <strong>13 to 44&times; faster</strong>.</figcaption>
       </figure>
       <div class="table-wrap">
         <table class="wide">
@@ -408,7 +408,7 @@
           </tbody>
         </table>
       </div>
-      <p class="caption-note">Final validation perplexity ($\downarrow$); best per column in <strong>bold</strong>
+      <p class="caption-note">Final validation perplexity ($\downarrow$). The best value in each column is in <strong>bold</strong>
         (Table&nbsp;17 in the paper).</p>
     </div>
   </section>
@@ -419,7 +419,7 @@
       <span class="eyebrow">Supplementary</span>
       <h2>Training curves</h2>
       <p class="caption-note">Per-step training and validation loss across all GPT-2 and LLaMA scales. Each
-        panel compares AdamW, Muon, and RMNP; RMNP matches or slightly improves on Muon, while both clearly
+        panel compares AdamW, Muon, and RMNP. RMNP matches or slightly improves on Muon, and both clearly
         beat AdamW.</p>
       <div class="tabs-wrap">
         <div class="tabs">
@@ -430,38 +430,38 @@
 
         <div class="tab-panel active" id="tab-owt">
           <div class="curve-grid">
-            <img loading="lazy" src="static/images/curves/GPT-2-Small-OWT-train_loss.png" alt="GPT-2 Small on OpenWebText — training loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Small-OWT-val_loss.png" alt="GPT-2 Small on OpenWebText — validation loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Medium-OWT-train_loss.png" alt="GPT-2 Medium on OpenWebText — training loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Medium-OWT-val_loss.png" alt="GPT-2 Medium on OpenWebText — validation loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Large-OWT-train_loss.png" alt="GPT-2 Large on OpenWebText — training loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Large-OWT-val_loss.png" alt="GPT-2 Large on OpenWebText — validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-OWT-train_loss.png" alt="GPT-2 Small on OpenWebText: training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-OWT-val_loss.png" alt="GPT-2 Small on OpenWebText: validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-OWT-train_loss.png" alt="GPT-2 Medium on OpenWebText: training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-OWT-val_loss.png" alt="GPT-2 Medium on OpenWebText: validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-OWT-train_loss.png" alt="GPT-2 Large on OpenWebText: training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-OWT-val_loss.png" alt="GPT-2 Large on OpenWebText: validation loss" />
           </div>
         </div>
 
         <div class="tab-panel" id="tab-fw">
           <div class="curve-grid">
-            <img loading="lazy" src="static/images/curves/GPT-2-Small-FW-train_loss.png" alt="GPT-2 Small on FineWeb-Edu — training loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Small-FW-val_loss.png" alt="GPT-2 Small on FineWeb-Edu — validation loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Medium-FW-train_loss.png" alt="GPT-2 Medium on FineWeb-Edu — training loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Medium-FW-val_loss.png" alt="GPT-2 Medium on FineWeb-Edu — validation loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Large-FW-train_loss.png" alt="GPT-2 Large on FineWeb-Edu — training loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-Large-FW-val_loss.png" alt="GPT-2 Large on FineWeb-Edu — validation loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-XLarge-FW-train_loss.png" alt="GPT-2 XLarge on FineWeb-Edu — training loss" />
-            <img loading="lazy" src="static/images/curves/GPT-2-XLarge-FW-val_loss.png" alt="GPT-2 XLarge on FineWeb-Edu — validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-FW-train_loss.png" alt="GPT-2 Small on FineWeb-Edu: training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Small-FW-val_loss.png" alt="GPT-2 Small on FineWeb-Edu: validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-FW-train_loss.png" alt="GPT-2 Medium on FineWeb-Edu: training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Medium-FW-val_loss.png" alt="GPT-2 Medium on FineWeb-Edu: validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-FW-train_loss.png" alt="GPT-2 Large on FineWeb-Edu: training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-Large-FW-val_loss.png" alt="GPT-2 Large on FineWeb-Edu: validation loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-XLarge-FW-train_loss.png" alt="GPT-2 XLarge on FineWeb-Edu: training loss" />
+            <img loading="lazy" src="static/images/curves/GPT-2-XLarge-FW-val_loss.png" alt="GPT-2 XLarge on FineWeb-Edu: validation loss" />
           </div>
         </div>
 
         <div class="tab-panel" id="tab-c4">
           <div class="curve-grid">
-            <img loading="lazy" src="static/images/curves/LLaMA-60M-C4-train_loss.png" alt="LLaMA 60M on C4 — training loss" />
-            <img loading="lazy" src="static/images/curves/LLaMA-60M-C4-val_loss.png" alt="LLaMA 60M on C4 — validation loss" />
-            <img loading="lazy" src="static/images/curves/LLaMA-130M-C4-train_loss.png" alt="LLaMA 130M on C4 — training loss" />
-            <img loading="lazy" src="static/images/curves/LLaMA-130M-C4-val_loss.png" alt="LLaMA 130M on C4 — validation loss" />
-            <img loading="lazy" src="static/images/curves/LLaMA-350M-C4-train_loss.png" alt="LLaMA 350M on C4 — training loss" />
-            <img loading="lazy" src="static/images/curves/LLaMA-350M-C4-val_loss.png" alt="LLaMA 350M on C4 — validation loss" />
-            <img loading="lazy" src="static/images/curves/LLaMA-1B-C4-train_loss.png" alt="LLaMA 1B on C4 — training loss" />
-            <img loading="lazy" src="static/images/curves/LLaMA-1B-C4-val_loss.png" alt="LLaMA 1B on C4 — validation loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-60M-C4-train_loss.png" alt="LLaMA 60M on C4: training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-60M-C4-val_loss.png" alt="LLaMA 60M on C4: validation loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-130M-C4-train_loss.png" alt="LLaMA 130M on C4: training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-130M-C4-val_loss.png" alt="LLaMA 130M on C4: validation loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-350M-C4-train_loss.png" alt="LLaMA 350M on C4: training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-350M-C4-val_loss.png" alt="LLaMA 350M on C4: validation loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-1B-C4-train_loss.png" alt="LLaMA 1B on C4: training loss" />
+            <img loading="lazy" src="static/images/curves/LLaMA-1B-C4-val_loss.png" alt="LLaMA 1B on C4: validation loss" />
           </div>
         </div>
       </div>
